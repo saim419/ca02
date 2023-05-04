@@ -1,12 +1,27 @@
+<!DOCTYPE html>
+<html>
 
-    <h1>CS103a App</h1>
-    <p class="text-danger">Welcome to the App</p>
-    <!-- Here we show how to encode a URI and get weather data -->
-    <% address = encodeURI("152 Aspinwall Ave, Brookline MA, 02446") %>
-    <a href="https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=<%= address %>&benchmark=2020&format=json"> 
-        get weather</a>
-        <br>
+<head>
+    <title>Shoe Brand Generator</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
 
-  
-    
-  
+<body>
+    <h1>Shoe Brand Generator</h1>
+    <p>Enter your favorite brand of shoes:</p>
+    <form>
+        <input type="text" name="brand" id="brand" required>
+        <button type="button" onclick="generateShoeList()">Generate Response</button>
+    </form>
+    <div id="shoeList"></div>
+    <script>
+        const generateShoeList = async () => {
+            const input = document.getElementById("brand").value;
+            const response = await axios.post("/generateShoeList", { input });
+            document.getElementById("shoeList").innerText = response.data;
+        };
+    </script>
+</body>
+
+</html>

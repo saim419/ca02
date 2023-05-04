@@ -1,32 +1,56 @@
-const createError = require('http-errors');
+
 const express = require('express');
+const app = express();
+const createError = require('http-errors');
 const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const layouts = require("express-ejs-layouts");
 const pw_auth_router = require('./routes/pwauth')
-const toDoRouter = require('./routes/todo');
-const weatherRouter = require('./routes/weather');
+const toDoRouter = require('./routes/todo.js');
+const weatherRouter = require('./routes/weather.js');
+const responseRouter = require('./routes/response.js');
 
-const User = require('./models/User');
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(express.static(path.join(__dirname, 'public')));
+
+app.set('views', path.join(__dirname, 'views'));
+app.set('view engine', 'ejs');
+
+app.use('/', indexRouter);
+app.use('/response', responseRouter);
 
 /* **************************************** */
 /*  Connecting to a Mongo Database Server   */
 /* **************************************** */
 const mongodb_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/pwdemo';
-console.log('MONGODB_URI=',process.env.MONGODB_URI);
+console.log('MONGODB_URI=', process.env.MONGODB_URI);
 
-const mongoose = require( 'mongoose' );
+const mongoose = require('mongoose');
 
-mongoose.connect( mongodb_URI);
+mongoose.connect(mongodb_URI);
 
 const db = mongoose.connection;
 
 
 db.on('error', console.error.bind(console, 'connection error:'));
-db.once('open', function() {
+db.once('open', function () {
   console.log("we are connected!!!")
 });
+
+
+app.get('/shoes/:input', async (req, res) => {
+  // Get the shoe brand from the request URL
+  const input = req.params.input;
+
+  // Generate a list of shoes for the given brand using GPT
+  const shoes = await generateShoeList(input);
+
+  // Render the shoe list template with the generated list of shoes
+  res.render('shoeList', { shoes });
+});
+
 
 
 
@@ -42,7 +66,7 @@ const store = new MongoDBStore({
 });
 
 // Catch errors                                                                      
-store.on('error', function(error) {
+store.on('error', function (error) {
   console.log(error);
 });
 
@@ -62,7 +86,7 @@ function isLoggedIn(req, res, next) {
 /* **************************************** */
 /* creating the app */
 /* **************************************** */
-var app = express();
+
 
 app.use(session({
   secret: 'This is a secret',
@@ -95,13 +119,13 @@ app.use(pw_auth_router)
 
 app.use(layouts);
 
-app.get('/', (req,res,next) => {
+app.get('/', (req, res) => {
   res.render('index');
 })
 
-app.get('/about', 
+app.get('/about',
   isLoggedIn,
-  (req,res,next) => {
+  (req, res) => {
     res.render('about');
   }
 )
@@ -110,19 +134,10 @@ app.use(toDoRouter);
 app.use(weatherRouter);
 
 // catch 404 and forward to error handler
-app.use(function(req, res, next) {
+app.use(function (req, res, next) {
   next(createError(404));
 });
 
-// error handler
-app.use(function(err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
-
-  // render the error page
-  res.status(err.status || 500);
-  res.render('error');
-});
+app.use(responseRouter);
 
 module.exports = app;
